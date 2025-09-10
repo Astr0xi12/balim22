@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Platform Oyunu - Kapı</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #87ceeb; }
+    canvas { display: block; margin: auto; background: #222; }
+  </style>
+</head>
+<body>
+<canvas id="game" width="800" height="400"></canvas>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// Oyuncu
+const player = {
+  x: 50, y: 300, width: 30, height: 30,
+  color: "orange", dx: 0, dy: 0,
+  speed: 3, gravity: 0.5, jumpPower: -10,
+  onGround: false
+};
+
+// Seviye bilgisi
+let level = 1;
+
+// Kapı
+let door = {x: 720, y: 80, width: 40, height: 60};
+
+// Platformlar
+let platforms = [
+  {x: 0, y: 350, width: 800, height: 50},
+  {x: 200, y: 280, width: 100, height: 20},
+  {x: 400, y: 220, width: 120, height: 20},
+  {x: 600, y: 160, width: 100, height: 20},
+];
+
+function loadLevel2(){
+  level = 2;
+  player.x = 50; player.y = 300;
+  platforms = [
+    {x: 0, y: 350, width: 800, height: 50},
+    {x: 150, y: 300, width: 100, height: 20},
+    {x: 350, y: 240, width: 120, height: 20},
+    {x: 550, y: 180, width: 100, height: 20},
+    {x: 700, y: 120, width: 80, height: 20},
+  ];
+  door = {x: 720, y: 60, width: 40, height: 60}; // Kapıyı ekle
+}
+
+// Klavye kontrolleri
+const keys = {};
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+function update() {
+  // Hareket
+  if (keys["ArrowRight"]) player.dx = player.speed;
+  else if (keys["ArrowLeft"]) player.dx = -player.speed;
+  else player.dx = 0;
+
+  // Zıplama
+  if (keys["ArrowUp"] && player.onGround) {
+    player.dy = player.jumpPower;
+    player.onGround = false;
+  }
+
+  // Yerçekimi uygula
+  player.dy += player.gravity;
+  player.x += player.dx;
+  player.y += player.dy;
+
+  // Platform çarpışma
+  player.onGround = false;
+  for (let p of platforms) {
+    if (
+      player.x < p.x + p.width &&
+      player.x + player.width > p.x &&
+      player.y + player.height > p.y &&
+      player.y + player.height < p.y + p.height + player.dy
+    ) {
+      player.y = p.y - player.height;
+      player.dy = 0;
+      player.onGround = true;
+    }
+  }
+
+  // Seviye 1 sonunda Level 2'ye geç
+  if(level === 1 && player.x > 780){
+    loadLevel2();
+  }
+
+  // Kapıya ulaşıldı mı?
+  if (
+    player.x < door.x + door.width &&
+    player.x + player.width > door.x &&
+    player.y < door.y + door.height &&
+    player.y + player.height > door.y
+  ){
+    alert("SANA ÇOK AŞIĞIM İYİKİ VARSIN BEBEĞİM MUAHH❤️");
+    document.location.reload();
+  }
+
+  // Düşerse oyun biter
+  if (player.y > canvas.height) {
+    alert("Oyun Bitti!");
+    document.location.reload();
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Arka plan seviyesi
+  if(level === 1){
+    ctx.fillStyle = "#87ceeb";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  } else if(level === 2){
+    ctx.fillStyle = "#ffb6c1";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Arka plan kalpler ve yazılar
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "red";
+    for(let i=0;i<5;i++){
+      ctx.fillText("❤️", i*150+50, 50);
+    }
+    ctx.fillStyle = "white";
+    ctx.fillText("Nazım", 50, 100);
+    ctx.fillText("Balım", 150, 130);
+    ctx.fillText("Seni Çok Seviyorum ❤️", 300, 160);
+  }
+
+  // Oyuncu
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.width, player.height);
+
+  // Platformlar
+  ctx.fillStyle = "#444";
+  for (let p of platforms) {
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+  }
+
+  // Kapı
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(door.x, door.y, door.width, door.height);
+  ctx.fillStyle = "black";
+  ctx.font = "16px Arial";
+  ctx.fillText("KAPI", door.x+5, door.y+35);
+
+  // Level yazısı
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("Level: "+level,10,20);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
